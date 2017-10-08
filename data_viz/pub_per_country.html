@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+svg {
+  border: 1px solid #ccc;
+}
+
+path {
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+path:hover {
+    stroke:black;
+}
+
+div.tooltip {	
+    position: absolute;			
+    text-align: center;							
+    padding: 4px;				
+    font: 16px sans-serif;		
+    background: lightsteelblue;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var path = d3.geo.path();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+var data = {'kebeli': 1, 'jendouba': 2, 'siliana': 2, 'kasserine': 3, 'sidiBouzid': 5, 'tataouine': 6, 'tozeur': 6, 'gabes': 7, 'mahdia': 9, 'beja': 11, 'zaghouan': 17, 'monastir': 18, 'manouba': 19, 'gafsa': 21, 'benArous': 22, 'nabeul': 23, 'kairouan': 25, 'kef': 38, 'sfax': 57, 'bizert': 64, 'ariana': 112, 'sousse': 115, 'tunis': 1041}
+
+d3.json("/data/tunisia.json", function(error, topology) {
+
+  var ids = ["tunis", "ariana", "benArous", "manouba", "nabeul", "zaghouan", "bizert", "beja", "jendouba", "kef", "siliana", "sousse", "monastir", "mahdia", "sfax", "kairouan", "kasserine", "sidiBouzid", "gabes", "medenine", "tataouine", "gafsa", "tozeur", "kebeli"]
+
+  var color = d3.scale.linear()
+    .domain([-1, 10, 24])
+    .range(["green", "yellow", "red"]);
+
+  var featureCollection = topojson.feature(topology, topology.objects.governorates);
+  var bounds = d3.geo.bounds(featureCollection);
+  
+  var centerX = d3.sum(bounds, function(d) {return d[0];}) / 2,
+      centerY = d3.sum(bounds, function(d) {return d[1];}) / 2;
+
+  var projection = d3.geo.mercator()
+    .scale(3000)
+    .center([centerX, centerY]);
+    
+  path.projection(projection);
+  
+  var tooltip = d3.select("body")
+	.append("div")
+	.style("position", "absolute")
+	.style("z-index", "10")
+	.style("visibility", "hidden")
+	.attr("class", "tooltip");
+
+  svg.selectAll("path")
+      .data(featureCollection.features)
+      .enter().append("path")
+      .attr("d", path);
+  var allPath=svg.selectAll("path").each(function(d,i) { 
+  	var t = d3.select(this)
+  	t.attr("id", ids[i])
+  	.attr("fill", function (d,i) { 
+  		return color(Object.keys(data).indexOf(this.id)) })
+  	.on("mouseover", function(){
+  		data[this.id] = data[this.id]? data[this.id]: 0
+  		return tooltip.style("visibility", "visible").text(this.id+": "+data[this.id] );})
+	.on("mousemove", function(){return tooltip.style("top",
+	    (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+	.on("mouseout", function(){return tooltip.style("visibility", "hidden");});
+  });
+});
+
+</script>
+</body>
+</html>

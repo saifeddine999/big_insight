@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+svg {
+  border: 1px solid #ccc;
+}
+
+path {
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+path:hover {
+    stroke:black;
+}
+
+div.tooltip {	
+    position: absolute;			
+    text-align: center;							
+    padding: 4px;				
+    font: 16px sans-serif;		
+    background: lightsteelblue;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var path = d3.geo.path();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+var data = {'siliana': 1.41893461019, 'ariana': 5.14065786487, 'kebeli': 5.43384661746, 'sidiBouzid': 6.15412723572, 'manouba': 6.46395454922, 'sfax': 6.55980652621, 'gafsa': 6.57543741172, 'monastir': 6.60793551421, 'beja': 6.87508825166, 'nabeul': 6.97919907655, 'kairouan': 6.98471765565, 'tunis': 7.20405073584, 'kasserine': 7.35710551521, 'zaghouan': 7.43029332916, 'bizert': 7.82874383983, 'gabes': 7.9446639745, 'kef': 8.05446666202, 'tataouine': 8.10487056217, 'benArous': 8.69446321016, 'sousse': 8.7892020144, 'jendouba': 8.87244619445, 'mahdia': 9.07689165915, 'tozeur': 10.1479865044}
+d3.json("/data/tunisia.json", function(error, topology) {
+
+  var ids = ["tunis", "ariana", "benArous", "manouba", "nabeul", "zaghouan", "bizert", "beja", "jendouba", "kef", "siliana", "sousse", "monastir", "mahdia", "sfax", "kairouan", "kasserine", "sidiBouzid", "gabes", "medenine", "tataouine", "gafsa", "tozeur", "kebeli"]
+
+  var color = d3.scale.linear()
+    .domain([0, 5, 11])
+    .range(["green", "yellow", "red"]);
+
+  var featureCollection = topojson.feature(topology, topology.objects.governorates);
+  var bounds = d3.geo.bounds(featureCollection);
+  
+  var centerX = d3.sum(bounds, function(d) {return d[0];}) / 2,
+      centerY = d3.sum(bounds, function(d) {return d[1];}) / 2;
+
+  var projection = d3.geo.mercator()
+    .scale(3000)
+    .center([centerX, centerY]);
+    
+  path.projection(projection);
+  
+  var tooltip = d3.select("body")
+	.append("div")
+	.style("position", "absolute")
+	.style("z-index", "10")
+	.style("visibility", "hidden")
+	.attr("class", "tooltip");
+
+  svg.selectAll("path")
+      .data(featureCollection.features)
+      .enter().append("path")
+      .attr("d", path);
+  var allPath=svg.selectAll("path").each(function(d,i) { 
+  	var t = d3.select(this)
+  	t.attr("id", ids[i])
+  	.attr("fill", function (d,i) { 
+  		return color(Object.keys(data).indexOf(this.id)) })
+  	.on("mouseover", function(){
+  		data[this.id] = data[this.id]? data[this.id]: 0
+  		return tooltip.style("visibility", "visible").text(this.id+": "+data[this.id] );})
+	.on("mousemove", function(){return tooltip.style("top",
+	    (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+	.on("mouseout", function(){return tooltip.style("visibility", "hidden");});
+  });
+});
+
+</script>
+</body>
+</html>
